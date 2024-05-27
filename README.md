@@ -14,3 +14,4 @@ This is a Django DRF template with a simple user model and JWT authentication.
 - Custom throttling classes
 - Django signals
 - Django cache
+- 
