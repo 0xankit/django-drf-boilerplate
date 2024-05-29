@@ -20,6 +20,7 @@ This is a Django DRF template with a simple user model and JWT authentication.
  - [ ] DB routers
  - [ ] Tests
  - [ ] Structured api response
+ - [ ] DB seeding
 
 ## Installation
 

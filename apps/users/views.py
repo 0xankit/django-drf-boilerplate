@@ -6,13 +6,19 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.users.models import CustomUser
+from apps.users.models import CustomUser, Designation, Role
+from apps.users.permissions import IsAdminUserOrReadOnly
 from django_drf_boilerplate.utils.response import ApiResponse
 
-from .serializers import LoginRequestSerializer, UserSerializer
+from .serializers import (CustomTokenObtainPairSerializer,
+                          DesignationSerializer, ManageUserDesignation,
+                          ManageUserRolesSerializer, RoleSerializer,
+                          UserSerializer)
 
 
 @swagger_auto_schema(method='post',
@@ -78,38 +84,89 @@ def get_user_profile(request):
         return ApiResponse.error(message=str(exp))
 
 
-# login_user
-@swagger_auto_schema(method='post',
-                     operation_description=_('Login User API'),
-                     request_body=LoginRequestSerializer,
-                     responses={200: UserSerializer})
-@api_view(['POST'])
-def login_user(request):
-    '''
-    Login User API
+class RoleListViews(generics.ListCreateAPIView):
+    """
+    Role List Views
+    """
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+    permission_classes = [IsAdminUserOrReadOnly, IsAuthenticated]
 
-    Parameters
-    ----------
-        request : `HttpRequest`
-            User request object
 
-    Returns
-    -------
-        `ApiResponse`
-        API response in standard format
-    '''
-    logger.debug('Login user: %s', request.data)
-    data = request.data
-    request = LoginRequestSerializer(data=data)
-    if not request.is_valid():
-        logger.debug('Error in logging in user: %s', request.errors)
-        return ApiResponse.error(message=request.errors)
-    # user can login with username or email
-    user = authenticate(
-        username=data.get('username'), password=data.get('password'))
-    if user:
-        serializer = UserSerializer(user)
-        logger.info('User logged in successfully: %s', user.id)
-        return ApiResponse.success(data=serializer.data, message='User logged in successfully')
-    logger.error('Error in logging in user: %s', _('Invalid credentials'))
-    return ApiResponse.error(message=_('Invalid credentials'))
+class DesignationListViews(generics.ListCreateAPIView):
+    """
+    Designation List Views
+    """
+    queryset = Designation.objects.all()
+    serializer_class = DesignationSerializer
+    permission_classes = [IsAdminUserOrReadOnly, IsAuthenticated]
+
+    # def get(self, request, *args, **kwargs):
+    #     """
+    #     Get Designation List
+    #     """
+    #     return super().get(request, *args, **kwargs)
+
+
+# custom authentication Token pair
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Custom Token Obtain Pair View
+
+    Args:
+        TokenObtainPairView (TokenObtainPairView): Token Obtain Pair View
+    """
+    serializer_class = CustomTokenObtainPairSerializer
+    permission_classes = [AllowAny]
+
+
+@swagger_auto_schema(method='put',
+                     operation_description=_('Update User Roles'),
+                     request_body=RoleSerializer,
+                     responses={200: RoleSerializer})
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_user_roles(request):
+    """
+    Update User Roles
+    """
+    logger.info('Update User Roles: %s', request.data)
+    try:
+        user = get_object_or_404(CustomUser, id=request.user.id)
+        roles_serializer = ManageUserRolesSerializer(
+            instance=user, data=request.data, partial=True)
+        if not roles_serializer.is_valid():
+            logger.error('Error in updating user roles: %s',
+                         roles_serializer.errors)
+            return ApiResponse.error(message=roles_serializer.errors)
+        roles_serializer.save()
+        return ApiResponse.success(message='User roles updated successfully')
+    except Http404:
+        logger.error('User not found: %s', request.user.id)
+        return ApiResponse.error(message='User not found')
+
+
+# update designation
+@swagger_auto_schema(method='put',
+                     operation_description=_('Update User Designation'),
+                     request_body=DesignationSerializer,
+                     responses={200: DesignationSerializer})
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_user_designation(request):
+    """
+    Update User Designation
+    """
+    logger.info('Update User Designation: %s', request.data)
+    try:
+        user = get_object_or_404(CustomUser, id=request.user.id)
+        designation_serializer = ManageUserDesignation(
+            instance=user, data=request.data, partial=True)
+        if not designation_serializer.is_valid():
+            logger.error('Error in updating user designation: %s',
+                         designation_serializer.errors)
+            return ApiResponse.error(message=designation_serializer.errors)
+        designation_serializer.save()
+        return ApiResponse.success(message='User designation updated successfully')
+    except Http404:
+        logger.error('User not found: %s', request.user.id)
+        return ApiResponse.error(message='User not found')
