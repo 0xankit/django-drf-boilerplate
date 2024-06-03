@@ -14,6 +14,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from django_drf_boilerplate.utils.logger import get_extra_params
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -71,18 +73,75 @@ REST_FRAMEWORK = {
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'add_extra_params': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': get_extra_params,
+        }
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[{server_time}] {message}",
+            "style": "{",
+        },
+        'request_formatter': {
+            'format': '{levelname} {asctime} {request.method} {ip} MODULE: [{module}] MESSAGE: [{message}]',
+            'style': '{'
+        }
+    },
     'handlers': {
-        'file': {
+        'file-debug': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/debug.log'),
+            'when': 'midnight',
+            'interval': 1,
+            'backupCount': 7,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
+        },
+        'log_to_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': './logs/api.log',
+            'formatter': 'request_formatter',
+            'filters': ['add_extra_params']
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['file-debug', 'console'],
             'level': 'DEBUG',
             'propagate': True,
+        },
+        'django.request': {  # Logs only  only 4xx and 5xx requests.
+            'handlers': ['console', 'log_to_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        "django.server": {
+            "handlers": ["django.server"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }
