@@ -14,7 +14,8 @@ Usage:
     return ApiResponse.exception(message='Exception', status_code=500)
     
     # Custom response
-    return ApiResponse.custom_response(data={'key': 'value'}, message='Custom message', status_code=200)
+    return ApiResponse.custom_response(data={'key': 'value'}, 
+                                        message='Custom message', status_code=200)
     
 '''
 from django.http import JsonResponse
@@ -26,7 +27,7 @@ class ApiResponse:
     Api response class for returning response in standard format
     '''
     @staticmethod
-    def success(data=None, message='Success', status_code=status.HTTP_200_OK):
+    def success(data=None, message='Success', status_code=status.HTTP_200_OK) -> JsonResponse:
         """
         Returns a success response in standard format
 
@@ -45,7 +46,7 @@ class ApiResponse:
         return JsonResponse(response_data, status=status_code)
 
     @staticmethod
-    def error(message='Error', status_code=status.HTTP_400_BAD_REQUEST):
+    def error(message='Error', status_code=status.HTTP_400_BAD_REQUEST) -> JsonResponse:
         '''
         Returns an error response in standard format
 
@@ -60,7 +61,7 @@ class ApiResponse:
         return JsonResponse(response_data, status=status_code)
 
     @staticmethod
-    def exception(message="Exception", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR):
+    def exception(message="Exception", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) -> JsonResponse:
         '''
         Returns an exception response in standard format
 
@@ -75,7 +76,7 @@ class ApiResponse:
         return JsonResponse(response_data, status=status_code)
 
     @staticmethod
-    def custom_response(data, message, status_code):
+    def custom_response(data: dict, message: str, status_code: int) -> JsonResponse:
         '''
         Returns a custom response in standard format
 
