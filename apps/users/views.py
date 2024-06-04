@@ -1,7 +1,6 @@
 # views.py
-from venv import logger
+import logging
 
-from django.contrib.auth import authenticate
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
@@ -11,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.users.errors import UserErrorMessages
 from apps.users.models import CustomUser, Designation, Role
 from apps.users.permissions import IsAdminUserOrReadOnly
 from django_drf_boilerplate.utils.response import ApiResponse
@@ -19,6 +19,8 @@ from .serializers import (CustomTokenObtainPairSerializer,
                           DesignationSerializer, ManageUserDesignation,
                           ManageUserRolesSerializer, RoleSerializer,
                           UserSerializer)
+
+logger = logging.getLogger(__name__)
 
 
 @swagger_auto_schema(method='post',
@@ -47,9 +49,11 @@ def register_user(request):
         serializer.save()
         logger.info('User registered successfully: %s',
                     serializer.data.get('id'))
-        return ApiResponse.success(data=serializer.data, message='User registered successfully')
+        return ApiResponse.success(data=serializer.data,
+                                   message=UserErrorMessages.USER_REGISTERED_SUCCESSFULLY.value)
     logger.error('Error in registering user: %s', serializer.errors)
-    return ApiResponse.error(message=serializer.errors)
+    return ApiResponse.error(message=UserErrorMessages.USER_REGISTRATION_FAILED.value,
+                             error=serializer.errors)
 
 
 @swagger_auto_schema(method='get',
@@ -71,17 +75,20 @@ def get_user_profile(request):
         `ApiResponse`
         API response in standard format
     '''
-    logger.debug('Get user profile: %s', request.user.id)
+    logger.info('Get user profile: %s', request.user.id)
     try:
         user = get_object_or_404(CustomUser, id=request.user.id)
         serializer = UserSerializer(user)
-        return ApiResponse.success(data=serializer.data, message=_('User profile fetched successfully'))
+        logger.debug('User profile fetched successfully: %s', user)
+        return ApiResponse.success(data=serializer.data,
+                                   message=UserErrorMessages.USER_FETCHED_SUCCESSFULLY.value)
     except Http404:
-        logger.error('User not found: %s', request.user.id)
-        return ApiResponse.error(message=_('User not found'))
+        logger.debug('User not found: %s', request.user.id)
+        return ApiResponse.error(message=UserErrorMessages.USER_NOT_FOUND.value)
     except Exception as exp:
-        logger.error('Error in fetching user profile: %s', exp)
-        return ApiResponse.error(message=str(exp))
+        logger.exception('Error in fetching user profile: %s', exp)
+        return ApiResponse.error(message=UserErrorMessages.ERROR_FETCHING_USER.value,
+                                 error=str(exp))
 
 
 class RoleListViews(generics.ListCreateAPIView):
@@ -137,12 +144,19 @@ def update_user_roles(request):
         if not roles_serializer.is_valid():
             logger.error('Error in updating user roles: %s',
                          roles_serializer.errors)
-            return ApiResponse.error(message=roles_serializer.errors)
+            return ApiResponse.error(error=roles_serializer.errors,
+                                     message=UserErrorMessages.ERROR_UPDATING_USER_ROLE.value)
         roles_serializer.save()
-        return ApiResponse.success(message='User roles updated successfully')
+        logger.info('User roles updated successfully: %s', request.user.id)
+        return ApiResponse.success(
+            message=_(UserErrorMessages.USER_ROLE_UPDATED_SUCCESSFULLY.value))
     except Http404:
         logger.error('User not found: %s', request.user.id)
-        return ApiResponse.error(message='User not found')
+        return ApiResponse.error(message=UserErrorMessages.USER_NOT_FOUND.value)
+    except Exception as exp:
+        logger.exception('Error in updating user roles: %s', exp)
+        return ApiResponse.error(message=UserErrorMessages.ERROR_UPDATING_USER_ROLE.value,
+                                 error=str(exp))
 
 
 # update designation
@@ -164,9 +178,18 @@ def update_user_designation(request):
         if not designation_serializer.is_valid():
             logger.error('Error in updating user designation: %s',
                          designation_serializer.errors)
-            return ApiResponse.error(message=designation_serializer.errors)
+            return ApiResponse.error(error=designation_serializer.errors,
+                                     message=UserErrorMessages.ERROR_UPDATING_USER_DESIGNATION.value
+                                     )
         designation_serializer.save()
-        return ApiResponse.success(message='User designation updated successfully')
+        logger.info('User designation updated successfully: %s',
+                    request.user.id)
+        return ApiResponse.success(
+            message=UserErrorMessages.USER_DESIGNATION_UPDATED_SUCCESSFULLY.value)
     except Http404:
         logger.error('User not found: %s', request.user.id)
-        return ApiResponse.error(message='User not found')
+        return ApiResponse.error(message=UserErrorMessages.USER_NOT_FOUND.value)
+    except Exception as exp:
+        logger.exception('Error in updating user designation: %s', exp)
+        return ApiResponse.error(message=UserErrorMessages.ERROR_UPDATING_USER_DESIGNATION.value,
+                                 error=str(exp))

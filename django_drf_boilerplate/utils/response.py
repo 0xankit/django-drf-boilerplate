@@ -46,7 +46,7 @@ class ApiResponse:
         return JsonResponse(response_data, status=status_code)
 
     @staticmethod
-    def error(message='Error', status_code=status.HTTP_400_BAD_REQUEST) -> JsonResponse:
+    def error(message='Error', status_code=status.HTTP_400_BAD_REQUEST, error=None) -> JsonResponse:
         '''
         Returns an error response in standard format
 
@@ -57,7 +57,7 @@ class ApiResponse:
             status_code : `int`
                 status code of response
         '''
-        response_data = {'success': False, 'message': message}
+        response_data = {'success': False, 'message': message, 'error': error}
         return JsonResponse(response_data, status=status_code)
 
     @staticmethod
