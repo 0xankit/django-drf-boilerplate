@@ -4,14 +4,14 @@ This is a Django DRF template with a simple user model and JWT authentication.
 
 ## Features
 
- - [ ] Password based authentication
+ - [x] Password based authentication
  - [ ] Role based authroization
- - [ ] Structured Logging
- - [ ] translation
- - [ ] Custom user model
+ - [x] Structured Logging
+ - [x] translation
+ - [x] Custom user model
  - [ ] DB support for Postgres
  - [ ] Docker support
- - [ ] Swagger documentation
+ - [x] Swagger documentation
  - [ ] Custom permission classes
  - [ ] Custom group based permission classes
  - [ ] Custom throttling classes
@@ -19,7 +19,7 @@ This is a Django DRF template with a simple user model and JWT authentication.
  - [ ] Django cache
  - [ ] DB routers
  - [ ] Tests
- - [ ] Structured api response
+ - [x] Structured api response
  - [ ] DB seeding
 
 ## Installation
@@ -28,6 +28,14 @@ This is a Django DRF template with a simple user model and JWT authentication.
 2. Create a virtual environment
 3. Install the dependencies
 4. Run the server
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+ENV=development python manage.py runserver
+or
+ENV=production python manage.py runserver
+```
 
 ## Usage
 
@@ -40,8 +48,8 @@ This is a Django DRF template with a simple user model and JWT authentication.
     python manage.py runserver
    ```
 
-
 ## Common commands
+
 1. Check for errors: `python manage.py check`
 2. Create superuser: `python manage.py createsuperuser`
 3. Run the server: `python manage.py runserver`
@@ -51,4 +59,4 @@ This is a Django DRF template with a simple user model and JWT authentication.
 7. Compile translation files: `django-admin compilemessages`
 8. Generate migration files: `python manage.py makemigrations`
 9. Migration: `python manage.py migrate`
-10. 
+10.

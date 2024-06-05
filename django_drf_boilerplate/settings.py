@@ -11,25 +11,33 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
-from datetime import timedelta
 from pathlib import Path
+from venv import logger
 
 from django_drf_boilerplate.utils.logger import get_extra_params
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load the environment variables
+ENV = os.getenv('ENV', 'development')
+if ENV == 'development':
+    from .development import *
+    logger.info('Development settings loaded')
+elif ENV == 'production':
+    from .production import *
+    logger.info('Production settings loaded')
+else:
+    logger.error(f"Unknown ENV: {ENV}")
+    raise ValueError(f"Unknown ENV: {ENV}")
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%z37n7mw2!v1n6or6@9+4c8cka@wc5=2k$q(ra1k08vc#)(d2q'
+# SECRET_KEY = 'django-insecure-%z37n7mw2!v1n6or6@9+4c8cka@wc5=2k$q(ra1k08vc#)(d2q'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -52,17 +60,6 @@ INSTALLED_APPS = [
 
 SESSIONS_ENGINE = 'django.contrib.sessions.backends.cache'
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379",
-    }
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=10),
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -181,17 +178,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'django_drf_boilerplate.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -240,16 +226,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-SWAGGER_SETTINGS = {
-    'DEFAULT_INFO': 'import.path.to.urls.api_info',
-    'SUPPORTED_SUBMIT_METHODS': ['get', 'post', 'put', 'delete', 'patch'],
-    'USE_SESSION_AUTH': False,
-    'SECURITY_DEFINITIONS': {
-        'api_key': {
-            'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization'
-        }
-    },
-}
