@@ -2,20 +2,34 @@ version: '3.8'
 
 services:
   db:
+    container_name: postgres
     image: postgres
     environment:
-      POSTGRES_DB: your_db_name
-      POSTGRES_USER: your_db_user
-      POSTGRES_PASSWORD: your_db_password
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/data/postgres # Persist data even after container is removed
 
-  web:
+  backend:
+    container_name: backend
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      - ENV=production
+    command: ./start.sh start
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     depends_on:
       - db
+
+volumes:
+  pgdata:
